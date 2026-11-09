@@ -56,6 +56,13 @@ export const ladder2026=[
 {slug:E,name:'Terrabrook Dolphins',p:10,w:2,d:4,l:4,pf:160,pa:220,diff:-60,pts:8},
 {slug:F,name:'Winton Bay Warriors',p:10,w:0,d:0,l:10,pf:110,pa:224,diff:-114,pts:0}
 ];
+// Confirmed 2027 movement: Kai Rangi joins Clearwyn Bay from Winton Bay.
+const kaiRangi=rosters['winton-bay-warriors'].find(player=>player.name==='Kai Rangi');
+rosters['winton-bay-warriors']=rosters['winton-bay-warriors'].filter(player=>player.name!=='Kai Rangi');
+const bishop=rosters['clearwyn-bay-lions'].find(player=>player.number===2);
+rosters['clearwyn-bay-lions']=rosters['clearwyn-bay-lions'].map(player=>player.number===2?{...kaiRangi,number:2,position:'Right wing',captain:false}:player);
+rosters['clearwyn-bay-lions'].push({...bishop,number:22,position:'Reserve',captain:false});
+
 export const ladder2027=[...teams].sort((a,b)=>a.name.localeCompare(b.name)).map(t=>({slug:t.slug,name:t.name,p:0,w:0,d:0,l:0,pf:0,pa:0,diff:0,pts:0}));
 export const fallback={teams,news,matches:fixtures2026,ladder:ladder2026};
 export const fallbackForSeason=season=>({teams,news,matches:season===2027?fixtures2027:fixtures2026,ladder:season===2027?ladder2027:ladder2026});
