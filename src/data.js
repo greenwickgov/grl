@@ -28,12 +28,14 @@ export const fixtures2026=roundRobin.flatMap((round,index)=>round.map((pair,slot
 // Six selected games move into rounds 11–12. This gives each club two byes,
 // while retaining a true home-and-away competition (every pairing twice).
 const moved=new Set(['1-0','2-2','3-0','4-2','5-2','7-2']);
-const movedFixtures=[];
 export const fixtures2027=roundRobin.flatMap((round,index)=>round.flatMap((pair,slot)=>{
   const key=`${index+1}-${slot}`;
-  if(moved.has(key)){movedFixtures.push(pair);return []}
+  if(moved.has(key))return [];
   return [match(2027,index+1,slot,pair)];
-})).concat(movedFixtures.map((pair,index)=>match(2027,11+Math.floor(index/3),index%3,pair)));
+})).concat(
+  [[A,F],[D,E],[B,C]].map((pair,index)=>match(2027,11,index,pair)),
+  [[A,D],[E,F],[C,B]].map((pair,index)=>match(2027,12,index,pair))
+);
 
 export const ladder2026=[
 {slug:A,name:'Clearwyn Bay Lions',p:10,w:10,d:0,l:0,pf:260,pa:120,diff:140,pts:20},
