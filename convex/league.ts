@@ -1,0 +1,12 @@
+import { query, internalMutation } from './_generated/server';
+import { v } from 'convex/values';
+export const overview = query({args:{season:v.number()},handler:async(ctx,{season})=>{
+ const teams=await ctx.db.query('teams').collect();
+ const matches=await ctx.db.query('matches').withIndex('by_season',q=>q.eq('season',season)).collect();
+ const news=(await ctx.db.query('news').collect()).filter(n=>n.published).sort((a,b)=>b.publishedAt-a.publishedAt);
+ const ladder=teams.map(t=>{const played=matches.filter(m=>m.competition==='regular'&&m.status==='final'&&(m.home===t.slug||m.away===t.slug));let w=0,d=0,pf=0,pa=0; for(const m of played){const a=m.home===t.slug?m.homeScore:m.awayScore,b=m.home===t.slug?m.awayScore:m.homeScore;if(a===undefined||b===undefined)continue;pf+=a;pa+=b;if(a>b)w++;if(a===b)d++;}return {...t,p:played.length,w,d,l:played.length-w-d,pf,pa,diff:pf-pa,pts:w*2+d};}).sort((a,b)=>b.pts-a.pts||b.diff-a.diff||b.pf-a.pf||a.name.localeCompare(b.name));
+ return {teams,matches,news,ladder};
+}});
+// Internal functions are callable by deployment administrators, never website visitors.
+export const saveNews=internalMutation({args:{slug:v.string(),title:v.string(),category:v.string(),summary:v.string(),body:v.string(),image:v.optional(v.string()),publishedAt:v.number(),published:v.boolean(),team:v.optional(v.string())},handler:async(ctx,a)=>{const old=await ctx.db.query('news').withIndex('by_slug',q=>q.eq('slug',a.slug)).unique();return old?ctx.db.patch(old._id,a):ctx.db.insert('news',a);}});
+export const saveMatch=internalMutation({args:{id:v.optional(v.id('matches')),season:v.number(),round:v.number(),home:v.string(),away:v.string(),kickoff:v.string(),venue:v.string(),status:v.union(v.literal('scheduled'),v.literal('live'),v.literal('final')),homeScore:v.optional(v.number()),awayScore:v.optional(v.number()),competition:v.union(v.literal('regular'),v.literal('finals'))},handler:async(ctx,{id,...m})=>{if(m.home===m.away)throw new Error('Teams must differ');for(const slug of [m.home,m.away])if(!await ctx.db.query('teams').withIndex('by_slug',q=>q.eq('slug',slug)).unique())throw new Error('Unknown team');if(!Number.isFinite(Date.parse(m.kickoff)))throw new Error('Invalid kickoff');if(m.round<1||!Number.isInteger(m.round))throw new Error('Invalid round');if(m.status!=='scheduled'&&[m.homeScore,m.awayScore].some(s=>s===undefined||s<0||!Number.isInteger(s)))throw new Error('Valid scores required');return id?ctx.db.patch(id,m):ctx.db.insert('matches',m);}});
